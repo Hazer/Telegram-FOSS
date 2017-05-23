@@ -37,7 +37,6 @@ public class ConnectionsManager {
     public final static int ConnectionTypeUpload = 4;
     public final static int ConnectionTypePush = 8;
     public final static int ConnectionTypeDownload2 = ConnectionTypeDownload | (1 << 16);
-    public final static int ConnectionTypeUpload2 = ConnectionTypeUpload | (1 << 16);
 
     public final static int FileTypePhoto = 0x01000000;
     public final static int FileTypeVideo = 0x02000000;
@@ -111,18 +110,18 @@ public class ConnectionsManager {
     }
 
     public int sendRequest(TLObject object, RequestDelegate completionBlock, int flags) {
-        return sendRequest(object, completionBlock, null, flags, DEFAULT_DATACENTER_ID, ConnectionTypeGeneric, true);
+        return sendRequest(object, completionBlock, null, null, flags, DEFAULT_DATACENTER_ID, ConnectionTypeGeneric, true);
     }
 
     public int sendRequest(TLObject object, RequestDelegate completionBlock, int flags, int connetionType) {
-        return sendRequest(object, completionBlock, null, flags, DEFAULT_DATACENTER_ID, connetionType, true);
+        return sendRequest(object, completionBlock, null, null, flags, DEFAULT_DATACENTER_ID, connetionType, true);
     }
 
     public int sendRequest(TLObject object, RequestDelegate completionBlock, QuickAckDelegate quickAckBlock, int flags) {
-        return sendRequest(object, completionBlock, quickAckBlock, flags, DEFAULT_DATACENTER_ID, ConnectionTypeGeneric, true);
+        return sendRequest(object, completionBlock, quickAckBlock, null, flags, DEFAULT_DATACENTER_ID, ConnectionTypeGeneric, true);
     }
 
-    public int sendRequest(final TLObject object, final RequestDelegate onComplete, final QuickAckDelegate onQuickAck, final int flags, final int datacenterId, final int connetionType, final boolean immediate) {
+    public int sendRequest(final TLObject object, final RequestDelegate onComplete, final QuickAckDelegate onQuickAck, final WriteToSocketDelegate paramWriteToSocketDelegate, final int flags, final int datacenterId, final int connetionType, final boolean immediate) {
         final int requestToken = lastRequestToken.getAndIncrement();
         Utilities.stageQueue.postRunnable(new Runnable() {
             @Override
@@ -168,7 +167,7 @@ public class ConnectionsManager {
                                 FileLog.e(e);
                             }
                         }
-                    }, onQuickAck, flags, datacenterId, connetionType, immediate, requestToken);
+                    }, onQuickAck, paramWriteToSocketDelegate, flags, datacenterId, connetionType, immediate, requestToken);
                 } catch (Exception e) {
                     FileLog.e(e);
                 }
@@ -213,12 +212,17 @@ public class ConnectionsManager {
         native_setNetworkAvailable(isNetworkOnline(), getCurrentNetworkType());
     }
 
+    public void setLangCode(String paramString)
+    {
+        native_setLangCode(paramString);
+    }
+
     public void setPushConnectionEnabled(boolean value) {
         native_setPushConnectionEnabled(value);
     }
 
     public void init(int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String configPath, String logPath, int userId, boolean enablePushConnection) {
-        native_init(version, layer, apiId, deviceModel, systemVersion, appVersion, langCode, configPath, logPath, userId, enablePushConnection, isNetworkOnline(), getCurrentNetworkType());
+        native_init(version, layer, apiId, deviceModel, systemVersion, appVersion, langCode, "android", configPath, logPath, userId, enablePushConnection, isNetworkOnline(), getCurrentNetworkType());
         checkConnection();
         BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
             @Override
@@ -415,7 +419,7 @@ public class ConnectionsManager {
     public static native long native_getCurrentTimeMillis();
     public static native int native_getCurrentTime();
     public static native int native_getTimeDifference();
-    public static native void native_sendRequest(int object, RequestDelegateInternal onComplete, QuickAckDelegate onQuickAck, int flags, int datacenterId, int connetionType, boolean immediate, int requestToken);
+    public static native void native_sendRequest(int object, RequestDelegateInternal onComplete, QuickAckDelegate onQuickAck, WriteToSocketDelegate paramWriteToSocketDelegate, int flags, int datacenterId, int connetionType, boolean immediate, int requestToken);
     public static native void native_cancelRequest(int token, boolean notifyServer);
     public static native void native_cleanUp();
     public static native void native_cancelRequestsForGuid(int guid);
@@ -423,7 +427,8 @@ public class ConnectionsManager {
     public static native void native_applyDatacenterAddress(int datacenterId, String ipAddress, int port);
     public static native int native_getConnectionState();
     public static native void native_setUserId(int id);
-    public static native void native_init(int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String configPath, String logPath, int userId, boolean enablePushConnection, boolean hasNetwork, int networkType);
+    public static native void native_setLangCode(String paramString);
+    public static native void native_init(int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String configPath, String logPath, String something, int userId, boolean enablePushConnection, boolean hasNetwork, int networkType);
     public static native void native_setJava(boolean useJavaByteBuffers);
     public static native void native_setPushConnectionEnabled(boolean value);
 
