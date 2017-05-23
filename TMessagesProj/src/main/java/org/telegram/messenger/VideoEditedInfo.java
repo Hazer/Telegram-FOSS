@@ -8,6 +8,8 @@
 
 package org.telegram.messenger;
 
+import org.telegram.tgnet.TLRPC;
+
 import java.util.Locale;
 
 public class VideoEditedInfo {
@@ -19,12 +21,23 @@ public class VideoEditedInfo {
     public int resultWidth;
     public int resultHeight;
     public int bitrate;
+    public TLRPC.InputEncryptedFile encryptedFile;
+    public TLRPC.InputFile file;
+    public byte[] iv;
+    public byte[] key;
+    public boolean muted;
+    public boolean roundVideo;
     public String originalPath;
     public long estimatedSize;
     public long estimatedDuration;
 
     public String getString() {
         return String.format(Locale.US, "-1_%d_%d_%d_%d_%d_%d_%d_%d_%s", startTime, endTime, rotationValue, originalWidth, originalHeight, bitrate, resultWidth, resultHeight, originalPath);
+    }
+
+    public boolean needConvert()
+    {
+        return (!this.roundVideo) || ((this.roundVideo) && ((this.startTime > 0L) || ((this.endTime != -1L) && (this.endTime != this.estimatedDuration))));
     }
 
     public boolean parseString(String string) {
